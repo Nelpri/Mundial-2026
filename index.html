@@ -1,0 +1,776 @@
+html<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mundial 2026 · En Vivo</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800&family=Inter:wght@400;500;600&display=swap');
+
+  :root {
+    --green-field: #0d3b1e;
+    --green-mid:   #145228;
+    --green-light: #1e7a3e;
+    --gold:        #f0c040;
+    --gold-dim:    #a88520;
+    --white:       #f5f5f0;
+    --gray:        #8a8a82;
+    --red-live:    #e83030;
+    --bg-card:     rgba(255,255,255,0.05);
+    --border:      rgba(255,255,255,0.10);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--green-field);
+    color: var(--white);
+    min-height: 100vh;
+    background-image:
+      repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 60px,
+        rgba(255,255,255,0.018) 60px,
+        rgba(255,255,255,0.018) 61px
+      ),
+      repeating-linear-gradient(
+        90deg,
+        transparent,
+        transparent 60px,
+        rgba(255,255,255,0.018) 60px,
+        rgba(255,255,255,0.018) 61px
+      );
+  }
+
+  .top-bar {
+    background: rgba(0,0,0,0.35);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: var(--gold);
+  }
+  .logo span { color: var(--white); font-weight: 700; }
+  .clock-box {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--gray);
+    text-align: right;
+    line-height: 1.5;
+  }
+  .clock-box b { color: var(--white); font-size: 13px; }
+
+  .setup-screen {
+    max-width: 480px;
+    margin: 60px auto;
+    padding: 0 20px;
+    text-align: center;
+  }
+  .setup-screen h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: 22px;
+    color: var(--gold);
+    margin-bottom: 8px;
+  }
+  .setup-screen p {
+    font-size: 13px;
+    color: var(--gray);
+    margin-bottom: 24px;
+    line-height: 1.6;
+  }
+  .steps {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 24px;
+    text-align: left;
+  }
+  .steps ol { padding-left: 18px; }
+  .steps li {
+    font-size: 13px;
+    color: var(--white);
+    margin-bottom: 10px;
+    line-height: 1.5;
+  }
+  .steps li a { color: var(--gold); }
+  .steps li code {
+    background: rgba(255,255,255,0.1);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+  }
+  .key-input {
+    width: 100%;
+    background: rgba(255,255,255,0.07);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    color: var(--white);
+    font-family: 'DM Mono', monospace;
+    font-size: 14px;
+    outline: none;
+    margin-bottom: 12px;
+    transition: border-color .2s;
+  }
+  .key-input:focus { border-color: var(--gold); }
+  .key-input::placeholder { color: var(--gray); }
+  .btn-primary {
+    width: 100%;
+    padding: 13px;
+    background: var(--gold);
+    color: var(--green-field);
+    border: none;
+    border-radius: 10px;
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity .15s;
+  }
+  .btn-primary:hover { opacity: .88; }
+  .err-msg {
+    margin-top: 10px;
+    font-size: 12px;
+    color: var(--red-live);
+    display: none;
+  }
+
+  .app { display: none; padding: 16px 16px 40px; max-width: 900px; margin: 0 auto; }
+
+  .tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .tab {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 7px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    color: var(--gray);
+    transition: all .15s;
+  }
+  .tab.active {
+    background: var(--gold);
+    color: var(--green-field);
+    border-color: var(--gold);
+  }
+  .tab:hover:not(.active) { color: var(--white); border-color: rgba(255,255,255,.25); }
+
+  .status-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    font-size: 11px;
+    color: var(--gray);
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .status-bar .dot-live {
+    display: inline-block;
+    width: 6px; height: 6px;
+    background: var(--red-live);
+    border-radius: 50%;
+    margin-right: 5px;
+    animation: blink 1.2s infinite;
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.2} }
+  .btn-refresh {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--white);
+    padding: 5px 12px;
+    border-radius: 6px;
+    font-size: 11px;
+    cursor: pointer;
+    transition: background .15s;
+  }
+  .btn-refresh:hover { background: rgba(255,255,255,.12); }
+
+  .loading {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--gray);
+    font-size: 13px;
+  }
+  .spinner {
+    width: 32px; height: 32px;
+    border: 3px solid var(--border);
+    border-top-color: var(--gold);
+    border-radius: 50%;
+    animation: spin .8s linear infinite;
+    margin: 0 auto 16px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .matches-grid { display: flex; flex-direction: column; gap: 8px; }
+
+  .match-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 16px;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 10px;
+    transition: background .15s;
+  }
+  .match-card:hover { background: rgba(255,255,255,.08); }
+  .match-card.live-card {
+    border-color: var(--red-live);
+    background: rgba(232,48,48,0.07);
+  }
+  .match-card.col-card {
+    border-color: var(--gold);
+    background: rgba(240,192,64,0.07);
+  }
+
+  .team { display: flex; align-items: center; gap: 8px; }
+  .team.right { flex-direction: row-reverse; text-align: right; }
+  .team-flag { font-size: 22px; line-height: 1; }
+  .team-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--white);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100px;
+  }
+
+  .score-box { text-align: center; flex-shrink: 0; }
+  .score-nums {
+    font-family: 'Syne', sans-serif;
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--white);
+    letter-spacing: 2px;
+    line-height: 1;
+  }
+  .score-nums.upcoming {
+    font-family: 'DM Mono', monospace;
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--gray);
+    letter-spacing: 1px;
+  }
+  .match-meta {
+    font-size: 10px;
+    color: var(--gray);
+    margin-top: 3px;
+    line-height: 1.4;
+  }
+  .live-badge {
+    display: inline-block;
+    background: var(--red-live);
+    color: #fff;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    letter-spacing: .5px;
+    margin-top: 3px;
+  }
+  .fin-badge {
+    display: inline-block;
+    background: rgba(255,255,255,0.12);
+    color: var(--gray);
+    font-size: 9px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-top: 3px;
+    letter-spacing: .3px;
+  }
+
+  .date-sep {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--gold-dim);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 12px 0 4px;
+    font-family: 'DM Mono', monospace;
+  }
+  .date-sep.first { padding-top: 0; }
+
+  .groups-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 10px;
+  }
+  .group-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .group-head {
+    padding: 8px 14px;
+    background: rgba(0,0,0,0.2);
+    border-bottom: 1px solid var(--border);
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--gold);
+    letter-spacing: .5px;
+  }
+  .group-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .group-table th {
+    padding: 5px 10px;
+    color: var(--gray);
+    font-weight: 500;
+    font-size: 10px;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+  }
+  .group-table th:first-child { text-align: left; }
+  .group-table td {
+    padding: 6px 10px;
+    text-align: center;
+    border-top: 1px solid rgba(255,255,255,0.05);
+    color: rgba(255,255,255,.8);
+  }
+  .group-table td:first-child { text-align: left; }
+  .group-table .pts-cell { font-weight: 700; color: var(--white); }
+  .row-q { border-left: 3px solid #185fa5; }
+  .row-t { border-left: 3px solid #2d7a14; }
+  .team-cell { display: flex; align-items: center; gap: 6px; }
+  .mini-flag { font-size: 14px; }
+  .mini-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100px; }
+
+  .legend {
+    display: flex; gap: 14px; flex-wrap: wrap;
+    margin-bottom: 12px;
+    font-size: 11px; color: var(--gray);
+  }
+  .legend span { display: flex; align-items: center; gap: 5px; }
+  .ldot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+
+  .col-header {
+    background: linear-gradient(135deg, rgba(240,192,64,.15), rgba(0,0,0,0));
+    border: 1px solid rgba(240,192,64,.3);
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .col-flag { font-size: 40px; }
+  .col-info h3 {
+    font-family: 'Syne', sans-serif;
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--gold);
+  }
+  .col-info p { font-size: 12px; color: var(--gray); margin-top: 2px; }
+
+  .no-data {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--gray);
+    font-size: 13px;
+  }
+
+  .key-footer {
+    margin-top: 20px;
+    padding: 10px 14px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 11px;
+    color: var(--gray);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .btn-logout {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--gray);
+    padding: 3px 10px;
+    border-radius: 5px;
+    font-size: 11px;
+    cursor: pointer;
+  }
+  .btn-logout:hover { color: var(--white); border-color: rgba(255,255,255,.3); }
+
+  @media(max-width:480px){
+    .team-name { max-width: 70px; font-size: 12px; }
+    .score-nums { font-size: 18px; }
+    .team-flag { font-size: 18px; }
+    .groups-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <div class="logo">MUNDIAL <span>2026</span></div>
+  <div class="clock-box">
+    <div>🇨🇴 Hora Colombia</div>
+    <div><b id="clock">--:--:--</b></div>
+  </div>
+</div>
+
+<div class="setup-screen" id="setup">
+  <h2>⚽ Activar datos en vivo</h2>
+  <p>Necesitas una API key gratuita de <strong>football-data.org</strong> para ver marcadores en tiempo real. Es gratis y tarda 2 minutos.</p>
+
+  <div class="steps">
+    <ol>
+      <li>Ve a <a href="https://www.football-data.org/client/register" target="_blank">football-data.org/client/register</a></li>
+      <li>Regístrate con tu correo y confirma el email</li>
+      <li>En tu perfil verás tu <code>X-Auth-Token</code></li>
+      <li>Pega ese token aquí abajo y listo ✅</li>
+    </ol>
+  </div>
+
+  <input class="key-input" id="key-input" type="text" placeholder="Pega tu API key aquí..." autocomplete="off" />
+  <button class="btn-primary" onclick="conectar()">Conectar y ver partidos</button>
+  <div class="err-msg" id="err-msg">❌ Token inválido o error de conexión. Verifica el token e intenta de nuevo.</div>
+</div>
+
+<div class="app" id="app">
+
+  <div class="tabs">
+    <button class="tab active" onclick="cambiarTab('hoy')">Hoy</button>
+    <button class="tab" onclick="cambiarTab('colombia')">🇨🇴 Colombia</button>
+    <button class="tab" onclick="cambiarTab('grupos')">Grupos</button>
+    <button class="tab" onclick="cambiarTab('fixture')">Fixture</button>
+  </div>
+
+  <div class="status-bar">
+    <span><span class="dot-live"></span><span id="status-txt">Conectando...</span></span>
+    <div style="display:flex;gap:6px;align-items:center">
+      <span id="last-update" style="font-size:10px;color:var(--gray)"></span>
+      <button class="btn-refresh" onclick="refrescar()">↻ Actualizar</button>
+    </div>
+  </div>
+
+  <div id="vista-hoy"><div class="loading"><div class="spinner"></div>Cargando partidos...</div></div>
+  <div id="vista-colombia" style="display:none"><div class="loading"><div class="spinner"></div>Cargando...</div></div>
+  <div id="vista-grupos" style="display:none"><div class="loading"><div class="spinner"></div>Cargando posiciones...</div></div>
+  <div id="vista-fixture" style="display:none"><div class="loading"><div class="spinner"></div>Cargando fixture...</div></div>
+
+  <div class="key-footer">
+    <span>API Key: <code id="key-display">••••••••</code></span>
+    <button class="btn-logout" onclick="cerrarSesion()">Cambiar key</button>
+  </div>
+</div>
+<script>
+// ─── Config ───────────────────────────────────────────────
+const API_BASE = 'https://api.football-data.org/v4';
+const WC2026_ID = 2000; // Competition ID Mundial 2026
+let apiKey = '';
+let tabActual = 'hoy';
+let intervalo = null;
+let todosPartidos = [];
+let posiciones = [];
+
+// Flags mapa (ISO → emoji)
+const FLAGS = {
+  MEX:'🇲🇽',KOR:'🇰🇷',CZE:'🇨🇿',RSA:'🇿🇦',CAN:'🇨🇦',SUI:'🇨🇭',
+  BIH:'🇧🇦',QAT:'🇶🇦',SCO:'🏴󠁧󠁢󠁳󠁣󠁴󠁿',MAR:'🇲🇦',BRA:'🇧🇷',HAI:'🇭🇹',
+  USA:'🇺🇸',AUS:'🇦🇺',TUR:'🇹🇷',PAR:'🇵🇾',GER:'🇩🇪',CIV:'🇨🇮',
+  ECU:'🇪🇨',CUW:'🇨🇼',SWE:'🇸🇪',NED:'🇳🇱',JPN:'🇯🇵',TUN:'🇹🇳',
+  BEL:'🇧🇪',EGY:'🇪🇬',IRN:'🇮🇷',NZL:'🇳🇿',ESP:'🇪🇸',URU:'🇺🇾',
+  KSA:'🇸🇦',CPV:'🇨🇻',FRA:'🇫🇷',SEN:'🇸🇳',IRQ:'🇮🇶',NOR:'🇳🇴',
+  ARG:'🇦🇷',ALG:'🇩🇿',AUT:'🇦🇹',JOR:'🇯🇴',POR:'🇵🇹',COL:'🇨🇴',
+  COD:'🇨🇩',UZB:'🇺🇿',ENG:'🏴󠁧󠁢󠁥󠁮󠁧󠁿',CRO:'🇭🇷',GHA:'🇬🇭',PAN:'🇵🇦',
+};
+const flag = (iso) => FLAGS[iso] || '🏳️';
+
+// ─── Reloj Colombia ────────────────────────────────────────
+function tickClock() {
+  const now = new Date();
+  const col = new Date(now.getTime() - (now.getTimezoneOffset() + 300) * 60000);
+  document.getElementById('clock').textContent =
+    col.toTimeString().slice(0,8);
+}
+setInterval(tickClock, 1000);
+tickClock();
+
+// ─── Conversión de hora a Colombia ────────────────────────
+function aHoraColombia(isoStr) {
+  if (!isoStr) return '--';
+  const d = new Date(isoStr);
+  return d.toLocaleString('es-CO', {
+    timeZone: 'America/Bogota',
+    hour: '2-digit', minute: '2-digit', hour12: true
+  });
+}
+function fechaColombia(isoStr) {
+  if (!isoStr) return '';
+  const d = new Date(isoStr);
+  return d.toLocaleDateString('es-CO', {
+    timeZone: 'America/Bogota',
+    weekday: 'short', day: 'numeric', month: 'short'
+  });
+}
+function esHoyColombia(isoStr) {
+  const ahoraCol = new Date(new Date().toLocaleString('en-US', {timeZone:'America/Bogota'}));
+  const matchCol = new Date(new Date(isoStr).toLocaleString('en-US', {timeZone:'America/Bogota'}));
+  return ahoraCol.toDateString() === matchCol.toDateString();
+}
+
+// ─── Setup / Auth ──────────────────────────────────────────
+async function conectar() {
+  const k = document.getElementById('key-input').value.trim();
+  if (!k) return;
+  document.getElementById('err-msg').style.display = 'none';
+  try {
+    const r = await fetch(`${API_BASE}/competitions/${WC2026_ID}/matches?limit=1`, {
+      headers: { 'X-Auth-Token': k }
+    });
+    if (!r.ok) throw new Error('invalid');
+    apiKey = k;
+    localStorage.setItem('wc2026_key', k);
+    mostrarApp();
+  } catch(e) {
+    document.getElementById('err-msg').style.display = 'block';
+  }
+}
+
+function cerrarSesion() {
+  clearInterval(intervalo);
+  localStorage.removeItem('wc2026_key');
+  apiKey = '';
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('setup').style.display = 'block';
+}
+
+function mostrarApp() {
+  document.getElementById('setup').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  const k = apiKey;
+  document.getElementById('key-display').textContent = k.slice(0,4) + '••••' + k.slice(-4);
+  cargarDatos();
+  intervalo = setInterval(cargarDatos, 60000); // cada 60s
+}
+
+// ─── API calls ─────────────────────────────────────────────
+async function fetchJSON(url) {
+  const r = await fetch(url, { headers: { 'X-Auth-Token': apiKey } });
+  if (!r.ok) throw new Error(r.status);
+  return r.json();
+}
+
+async function cargarDatos() {
+  try {
+    document.getElementById('status-txt').textContent = 'Actualizando...';
+    const [matchesData, standingsData] = await Promise.all([
+      fetchJSON(`${API_BASE}/competitions/${WC2026_ID}/matches`),
+      fetchJSON(`${API_BASE}/competitions/${WC2026_ID}/standings`)
+    ]);
+    todosPartidos = matchesData.matches || [];
+    posiciones    = standingsData.standings || [];
+
+    const now = new Date().toLocaleString('es-CO', {
+      timeZone:'America/Bogota', hour:'2-digit', minute:'2-digit', second:'2-digit'
+    });
+    document.getElementById('last-update').textContent = `Actualizado: ${now}`;
+
+    const live = todosPartidos.filter(m => m.status === 'IN_PLAY' || m.status === 'PAUSED');
+    document.getElementById('status-txt').textContent =
+      live.length > 0
+        ? `${live.length} partido${live.length > 1 ? 's' : ''} en vivo`
+        : 'Datos en vivo · actualiza cada 60s';
+
+    renderTab(tabActual);
+  } catch(e) {
+    document.getElementById('status-txt').textContent = 'Error al cargar — intenta de nuevo';
+  }
+}
+
+function refrescar() { cargarDatos(); }
+</script>
+<script>
+// ─── Render ────────────────────────────────────────────────
+function cambiarTab(tab) {
+  tabActual = tab;
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    t.classList.toggle('active', ['hoy','colombia','grupos','fixture'][i] === tab);
+  });
+  ['hoy','colombia','grupos','fixture'].forEach(v => {
+    document.getElementById('vista-'+v).style.display = v === tab ? 'block' : 'none';
+  });
+  renderTab(tab);
+}
+
+function renderTab(tab) {
+  if (tab === 'hoy')      renderHoy();
+  if (tab === 'colombia') renderColombia();
+  if (tab === 'grupos')   renderGrupos();
+  if (tab === 'fixture')  renderFixture();
+}
+
+// ── Hoy ──────────────────────────────────────────────────
+function renderHoy() {
+  const hoy = todosPartidos.filter(m => esHoyColombia(m.utcDate));
+  const el = document.getElementById('vista-hoy');
+  if (!hoy.length) {
+    el.innerHTML = `<div class="no-data">No hay partidos programados para hoy.</div>`;
+    return;
+  }
+  el.innerHTML = `<div class="matches-grid">${hoy.map(cardPartido).join('')}</div>`;
+}
+
+// ── Colombia ──────────────────────────────────────────────
+function renderColombia() {
+  const col = todosPartidos.filter(m =>
+    m.homeTeam?.tla === 'COL' || m.awayTeam?.tla === 'COL'
+  );
+  const el = document.getElementById('vista-colombia');
+  el.innerHTML = `
+    <div class="col-header">
+      <div class="col-flag">🇨🇴</div>
+      <div class="col-info">
+        <h3>Colombia · Grupo K</h3>
+        <p>Tres partidos — fase de grupos Mundial 2026</p>
+      </div>
+    </div>
+    <div class="matches-grid">${col.length ? col.map(cardPartido).join('') : '<div class="no-data">Cargando partidos de Colombia...</div>'}</div>
+  `;
+}
+
+// ── Grupos ────────────────────────────────────────────────
+function renderGrupos() {
+  const el = document.getElementById('vista-grupos');
+  if (!posiciones.length) {
+    el.innerHTML = `<div class="loading"><div class="spinner"></div>Cargando posiciones...</div>`;
+    return;
+  }
+  const legend = `
+    <div class="legend">
+      <span><span class="ldot" style="background:#185fa5"></span>Clasifica directo</span>
+      <span><span class="ldot" style="background:#2d7a14"></span>Mejor tercero</span>
+    </div>`;
+  const cards = posiciones.map(st => {
+    const rows = st.table.map((t, i) => {
+      const cls = i < 2 ? 'row-q' : i === 2 ? 'row-t' : '';
+      const fl = flag(t.team?.tla);
+      return `<tr class="${cls}">
+        <td><div class="team-cell"><span class="mini-flag">${fl}</span><span class="mini-name">${t.team?.shortName || t.team?.name}</span></div></td>
+        <td>${t.playedGames}</td>
+        <td>${t.won}</td>
+        <td>${t.draw}</td>
+        <td>${t.lost}</td>
+        <td>${t.goalsFor}</td>
+        <td>${t.goalsAgainst}</td>
+        <td class="pts-cell">${t.points}</td>
+      </tr>`;
+    }).join('');
+    return `
+      <div class="group-card">
+        <div class="group-head">GRUPO ${st.group ? st.group.replace('Group ','') : ''}</div>
+        <table class="group-table">
+          <thead><tr><th>Selección</th><th>PJ</th><th>PG</th><th>PE</th><th>PP</th><th>GF</th><th>GC</th><th>Pts</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>`;
+  }).join('');
+  el.innerHTML = legend + `<div class="groups-grid">${cards}</div>`;
+}
+
+// ── Fixture ───────────────────────────────────────────────
+function renderFixture() {
+  const el = document.getElementById('vista-fixture');
+  if (!todosPartidos.length) {
+    el.innerHTML = `<div class="loading"><div class="spinner"></div>Cargando...</div>`;
+    return;
+  }
+  const porFecha = {};
+  todosPartidos.forEach(m => {
+    const fecha = fechaColombia(m.utcDate);
+    if (!porFecha[fecha]) porFecha[fecha] = [];
+    porFecha[fecha].push(m);
+  });
+  let html = '<div class="matches-grid">';
+  Object.entries(porFecha).forEach(([fecha, ms], idx) => {
+    html += `<div class="date-sep ${idx===0?'first':''}">${fecha}</div>`;
+    html += ms.map(cardPartido).join('');
+  });
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+// ── Card de partido ───────────────────────────────────────
+function cardPartido(m) {
+  const h = m.homeTeam;
+  const a = m.awayTeam;
+  const fh = flag(h?.tla), fa = flag(a?.tla);
+  const nameH = h?.shortName || h?.name || '?';
+  const nameA = a?.shortName || a?.name || '?';
+  const isCol = h?.tla==='COL' || a?.tla==='COL';
+  const isLive = m.status === 'IN_PLAY' || m.status === 'PAUSED';
+  const isDone = m.status === 'FINISHED';
+
+  let scoreHtml = '';
+  if (isLive || isDone) {
+    const gh = m.score?.fullTime?.home ?? m.score?.halfTime?.home ?? '-';
+    const ga = m.score?.fullTime?.away ?? m.score?.halfTime?.away ?? '-';
+    scoreHtml = `<div class="score-nums">${gh} – ${ga}</div>`;
+  } else {
+    scoreHtml = `<div class="score-nums upcoming">${aHoraColombia(m.utcDate)}</div>`;
+  }
+
+  let badge = '';
+  if (isLive) badge = `<div class="live-badge">● EN VIVO</div>`;
+  else if (isDone) badge = `<div class="fin-badge">FINALIZADO</div>`;
+  else badge = `<div style="font-size:10px;color:var(--gray);margin-top:3px">Hora COL</div>`;
+
+  const cardClass = isLive ? 'match-card live-card' : isCol ? 'match-card col-card' : 'match-card';
+
+  return `
+    <div class="${cardClass}">
+      <div class="team">
+        <span class="team-flag">${fh}</span>
+        <span class="team-name">${nameH}</span>
+      </div>
+      <div class="score-box">
+        ${scoreHtml}
+        ${badge}
+        <div class="match-meta">${m.group ? 'Gr. '+m.group.replace('Group ','') : ''}</div>
+      </div>
+      <div class="team right">
+        <span class="team-flag">${fa}</span>
+        <span class="team-name">${nameA}</span>
+      </div>
+    </div>`;
+}
+
+// ─── Auto-login si ya tiene key guardada ──────────────────
+window.addEventListener('load', () => {
+  const saved = localStorage.getItem('wc2026_key');
+  if (saved) {
+    apiKey = saved;
+    document.getElementById('key-input').value = saved;
+    mostrarApp();
+  }
+});
+</script>
+</body>
+</html>
