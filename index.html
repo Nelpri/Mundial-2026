@@ -269,12 +269,28 @@ function esHoyColombia(isoStr) {
 async function fetchJSON(path) {
   const separator = path.includes('?') ? '&' : '?';
   const fullUrl = `${FOOTBALL_API}${path}${separator}X-Auth-Token=${apiKey}`;
-  const proxiedUrl = PROXY + encodeURIComponent(fullUrl);
-  const r = await fetch(proxiedUrl);
-  if (!r.ok) throw new Error('HTTP ' + r.status);
-  return r.json();
-}
-// ─── Setup / Auth ──────────────────────────────────────────
+
+  // Lista de proxies a intentar en orden
+  const proxies = [
+    'https://api.allorigins.win/raw?url=',
+    'https://corsproxy.io/?url=',
+    'https://api.codetabs.com/v1/proxy?quest='
+  ];
+
+  let lastError = null;
+  for (const proxyBase of proxies) {
+    try {
+      const proxiedUrl = proxyBase + encodeURIComponent(fullUrl);
+      const r = await fetch(proxiedUrl);
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return await r.json();
+    } catch (e) {
+      lastError = e;
+      continue; // intenta el siguiente proxy
+    }
+  }
+  throw lastError;
+}// ─── Setup / Auth ──────────────────────────────────────────
 async function conectar() {
   const k = document.getElementById('key-input').value.trim();
   if (!k) return;
