@@ -291,19 +291,13 @@ async function fetchJSON(path) {
   }
   throw lastError;
 }// ─── Setup / Auth ──────────────────────────────────────────
-async function conectar() {
+function conectar() {
   const k = document.getElementById('key-input').value.trim();
   if (!k) return;
   document.getElementById('err-msg').style.display = 'none';
   apiKey = k;
-  try {
-    await fetchJSON(`/competitions/${WC2026_ID}/matches?limit=1`);
-    localStorage.setItem('wc2026_key', k);
-    mostrarApp();
-  } catch(e) {
-    apiKey = '';
-    document.getElementById('err-msg').style.display = 'block';
-  }
+  localStorage.setItem('wc2026_key', k);
+  mostrarApp();
 }
 
 function cerrarSesion() {
