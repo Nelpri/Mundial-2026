@@ -320,16 +320,9 @@ function mostrarApp() {
 async function cargarDatos() {
   try {
     document.getElementById('status-txt').textContent = 'Actualizando...';
-    const [matchesData, standingsData] = await Promise.all([
-      fetchJSON(`/competitions/${WC2026_ID}/matches`),
-      fetchJSON(`/competitions/${WC2026_ID}/standings`)
-    ]);
-todosPartidos = matchesData.matches || [];
-posiciones    = standingsData.standings || [];
-console.log('TOTAL PARTIDOS:', todosPartidos.length);
-console.log('PRIMER PARTIDO:', JSON.stringify(todosPartidos[0], null, 2));
-console.log('TOTAL GRUPOS EN STANDINGS:', posiciones.length);
-console.log('STANDINGS COMPLETO:', JSON.stringify(standingsData, null, 2));
+    const matchesData = await fetchJSON(`/competitions/${WC2026_ID}/matches`);
+    todosPartidos = matchesData.matches || [];
+    posiciones = calcularPosiciones(todosPartidos);
 
     const now = new Date().toLocaleString('es-CO', {
       timeZone:'America/Bogota', hour:'2-digit', minute:'2-digit', second:'2-digit'
@@ -340,12 +333,58 @@ console.log('STANDINGS COMPLETO:', JSON.stringify(standingsData, null, 2));
     document.getElementById('status-txt').textContent =
       live.length > 0
         ? `${live.length} partido${live.length > 1 ? 's' : ''} en vivo`
-        : 'Datos en vivo · actualiza cada 60s';
+        : `Datos cada 60s · ${todosPartidos.length} partidos cargados`;
 
     renderTab(tabActual);
   } catch(e) {
     document.getElementById('status-txt').textContent = 'Error al cargar — intenta de nuevo';
+    console.error(e);
   }
+}
+
+// ─── Calcular tabla de posiciones a partir de los partidos ──
+function calcularPosiciones(partidos) {
+  const grupos = {};
+
+  partidos.forEach(m => {
+    const g = m.group;
+    if (!g) return;
+    if (!grupos[g]) grupos[g] = {};
+
+    [m.homeTeam, m.awayTeam].forEach(team => {
+      if (team && !grupos[g][team.id]) {
+        grupos[g][team.id] = {
+          team: { tla: team.tla, name: team.name, shortName: team.shortName },
+          playedGames: 0, won: 0, draw: 0, lost: 0,
+          goalsFor: 0, goalsAgainst: 0, points: 0
+        };
+      }
+    });
+
+    if (m.status !== 'FINISHED') return;
+
+    const gh = m.score?.fullTime?.home;
+    const ga = m.score?.fullTime?.away;
+    if (gh == null || ga == null) return;
+
+    const home = grupos[g][m.homeTeam.id];
+    const away = grupos[g][m.awayTeam.id];
+
+    home.playedGames++; away.playedGames++;
+    home.goalsFor += gh; home.goalsAgainst += ga;
+    away.goalsFor += ga; away.goalsAgainst += gh;
+
+    if (gh > ga) { home.won++; home.points += 3; away.lost++; }
+    else if (gh < ga) { away.won++; away.points += 3; home.lost++; }
+    else { home.draw++; away.draw++; home.points++; away.points++; }
+  });
+
+  return Object.entries(grupos).map(([groupName, teamsObj]) => {
+    const table = Object.values(teamsObj).sort((a, b) =>
+      b.points - a.points || (b.goalsFor - b.goalsAgainst) - (a.goalsFor - a.goalsAgainst) || b.goalsFor - a.goalsFor
+    );
+    return { group: groupName, table };
+  }).sort((a, b) => a.group.localeCompare(b.group));
 }
 
 function refrescar() { cargarDatos(); }
