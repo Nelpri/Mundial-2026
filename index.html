@@ -324,8 +324,12 @@ async function cargarDatos() {
       fetchJSON(`/competitions/${WC2026_ID}/matches`),
       fetchJSON(`/competitions/${WC2026_ID}/standings`)
     ]);
-    todosPartidos = matchesData.matches || [];
-    posiciones    = standingsData.standings || [];
+todosPartidos = matchesData.matches || [];
+posiciones    = standingsData.standings || [];
+console.log('TOTAL PARTIDOS:', todosPartidos.length);
+console.log('PRIMER PARTIDO:', JSON.stringify(todosPartidos[0], null, 2));
+console.log('TOTAL GRUPOS EN STANDINGS:', posiciones.length);
+console.log('STANDINGS COMPLETO:', JSON.stringify(standingsData, null, 2));
 
     const now = new Date().toLocaleString('es-CO', {
       timeZone:'America/Bogota', hour:'2-digit', minute:'2-digit', second:'2-digit'
