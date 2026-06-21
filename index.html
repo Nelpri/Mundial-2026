@@ -1,654 +1,400 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mundial 2026 · Colombia</title>
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800&family=Inter:wght@400;500;600&display=swap');
-
-  :root {
-    --green-field: #0d3b1e;
-    --gold:        #f0c040;
-    --gold-dim:    #a88520;
-    --white:       #f5f5f0;
-    --gray:        #8a8a82;
-    --red-live:    #e83030;
-    --bg-card:     rgba(255,255,255,0.05);
-    --border:      rgba(255,255,255,0.10);
-  }
-
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-
-  body {
-    font-family: 'Inter', sans-serif;
-    background: var(--green-field);
-    color: var(--white);
-    min-height: 100vh;
-    background-image:
-      repeating-linear-gradient(0deg, transparent, transparent 60px, rgba(255,255,255,0.018) 60px, rgba(255,255,255,0.018) 61px),
-      repeating-linear-gradient(90deg, transparent, transparent 60px, rgba(255,255,255,0.018) 60px, rgba(255,255,255,0.018) 61px);
-  }
-
-  .top-bar {
-    background: rgba(0,0,0,0.35);
-    backdrop-filter: blur(8px);
-    border-bottom: 1px solid var(--border);
-    padding: 14px 20px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-  }
-  .logo { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; letter-spacing: -0.5px; color: var(--gold); }
-  .logo span { color: var(--white); font-weight: 700; }
-  .top-right { display: flex; align-items: center; gap: 12px; }
-  .clock-box { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--gray); text-align: right; line-height: 1.5; }
-  .clock-box b { color: var(--white); font-size: 13px; }
-
-  .btn-edit {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    color: var(--white);
-    padding: 7px 14px;
-    border-radius: 8px;
-    font-size: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background .15s;
-  }
-  .btn-edit:hover { background: rgba(255,255,255,.12); }
-  .btn-edit.active { background: var(--gold); color: var(--green-field); border-color: var(--gold); }
-
-  .app { padding: 16px 16px 40px; max-width: 900px; margin: 0 auto; }
-
-  .update-note {
-    background: rgba(240,192,64,.08);
-    border: 1px solid rgba(240,192,64,.25);
-    border-radius: 10px;
-    padding: 10px 14px;
-    font-size: 11px;
-    color: var(--gold-dim);
-    margin-bottom: 14px;
-    line-height: 1.5;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
-  }
-  .btn-reset {
-    background: transparent;
-    border: 1px solid rgba(232,48,48,.4);
-    color: var(--red-live);
-    padding: 4px 10px;
-    border-radius: 6px;
-    font-size: 10px;
-    cursor: pointer;
-    white-space: nowrap;
-  }
-  .btn-reset:hover { background: rgba(232,48,48,.1); }
-
-  .tabs { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
-  .tab {
-    font-size: 12px; font-weight: 600; padding: 7px 14px; border-radius: 8px; cursor: pointer;
-    border: 1px solid var(--border); background: var(--bg-card); color: var(--gray); transition: all .15s;
-  }
-  .tab.active { background: var(--gold); color: var(--green-field); border-color: var(--gold); }
-  .tab:hover:not(.active) { color: var(--white); border-color: rgba(255,255,255,.25); }
-
-  .matches-grid { display: flex; flex-direction: column; gap: 8px; }
-  .match-card {
-    background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 12px 16px;
-    display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px; transition: background .15s;
-  }
-  .match-card:hover { background: rgba(255,255,255,.08); }
-  .match-card.col-card { border-color: var(--gold); background: rgba(240,192,64,0.07); }
-  .match-card.editing { border-color: var(--gold); border-width: 1.5px; }
-
-  .team { display: flex; align-items: center; gap: 8px; }
-  .team.right { flex-direction: row-reverse; text-align: right; }
-  .team-flag { font-size: 22px; line-height: 1; }
-  .team-name { font-size: 13px; font-weight: 600; color: var(--white); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 110px; }
-
-  .score-box { text-align: center; flex-shrink: 0; }
-  .score-nums { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; color: var(--white); letter-spacing: 2px; line-height: 1; }
-  .score-nums.upcoming { font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 400; color: var(--gray); letter-spacing: 1px; }
-  .match-meta { font-size: 10px; color: var(--gray); margin-top: 3px; line-height: 1.4; }
-  .fin-badge { display: inline-block; background: rgba(255,255,255,0.12); color: var(--gray); font-size: 9px; font-weight: 600; padding: 2px 6px; border-radius: 4px; margin-top: 3px; letter-spacing: .3px; }
-
-  .score-edit { display: flex; align-items: center; gap: 6px; justify-content: center; }
-  .score-input {
-    width: 34px; text-align: center;
-    background: rgba(255,255,255,0.1);
-    border: 1px solid var(--gold);
-    border-radius: 6px;
-    color: var(--white);
-    font-family: 'Syne', sans-serif;
-    font-size: 16px;
-    font-weight: 700;
-    padding: 4px 0;
-  }
-  .score-input:focus { outline: none; background: rgba(255,255,255,0.18); }
-  .score-dash { color: var(--gray); font-weight: 700; }
-  .btn-clear-score {
-    background: none;
-    border: none;
-    color: var(--gray);
-    font-size: 14px;
-    cursor: pointer;
-    margin-left: 4px;
-  }
-  .btn-clear-score:hover { color: var(--red-live); }
-
-  .date-sep { font-size: 11px; font-weight: 600; color: var(--gold-dim); text-transform: uppercase; letter-spacing: 1px; padding: 12px 0 4px; font-family: 'DM Mono', monospace; }
-  .date-sep.first { padding-top: 0; }
-
-  .groups-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
-  .group-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
-  .group-head { padding: 8px 14px; background: rgba(0,0,0,0.2); border-bottom: 1px solid var(--border); font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700; color: var(--gold); letter-spacing: .5px; }
-  .group-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-  .group-table th { padding: 5px 6px; color: var(--gray); font-weight: 500; font-size: 10px; text-align: center; border-bottom: 1px solid var(--border); }
-  .group-table th:first-child { text-align: left; padding-left: 10px; }
-  .group-table td { padding: 6px 6px; text-align: center; border-top: 1px solid rgba(255,255,255,0.05); color: rgba(255,255,255,.8); }
-  .group-table td:first-child { text-align: left; padding-left: 10px; }
-  .group-table .pts-cell { font-weight: 700; color: var(--white); }
-  .row-q { border-left: 3px solid #185fa5; }
-  .row-t { border-left: 3px solid #2d7a14; }
-  .team-cell { display: flex; align-items: center; gap: 6px; }
-  .mini-flag { font-size: 14px; }
-  .mini-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 95px; }
-  .stat-input {
-    width: 26px; text-align: center;
-    background: rgba(255,255,255,0.08);
-    border: 1px solid rgba(240,192,64,.4);
-    border-radius: 4px;
-    color: var(--white);
-    font-size: 11px;
-    padding: 2px 0;
-  }
-  .stat-input:focus { outline: none; background: rgba(255,255,255,0.18); }
-
-  .legend { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 12px; font-size: 11px; color: var(--gray); }
-  .legend span { display: flex; align-items: center; gap: 5px; }
-  .ldot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
-
-  .col-header {
-    background: linear-gradient(135deg, rgba(240,192,64,.15), rgba(0,0,0,0));
-    border: 1px solid rgba(240,192,64,.3);
-    border-radius: 12px; padding: 16px 20px; margin-bottom: 14px;
-    display: flex; align-items: center; gap: 14px;
-  }
-  .col-flag { font-size: 40px; }
-  .col-info h3 { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 800; color: var(--gold); }
-  .col-info p { font-size: 12px; color: var(--gray); margin-top: 2px; }
-
-  .edit-banner {
-    background: rgba(240,192,64,.12);
-    border: 1px solid var(--gold);
-    border-radius: 10px;
-    padding: 10px 14px;
-    font-size: 12px;
-    color: var(--gold);
-    margin-bottom: 14px;
-    display: none;
-  }
-  .edit-banner.show { display: block; }
-
-  @media(max-width:480px){
-    .team-name { max-width: 70px; font-size: 12px; }
-    .score-nums { font-size: 18px; }
-    .team-flag { font-size: 18px; }
-    .groups-grid { grid-template-columns: 1fr; }
-    .mini-name { max-width: 70px; }
-    .group-table { font-size: 11px; }
-    .group-table th, .group-table td { padding: 5px 3px; }
-  }
-</style>
+<title>Mundial 2026 · En Vivo</title>
+<link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
 <div class="top-bar">
   <div class="logo">MUNDIAL <span>2026</span></div>
-  <div class="top-right">
-    <div class="clock-box">
-      <div>🇨🇴 Hora Colombia</div>
-      <div><b id="clock">--:--:--</b></div>
-    </div>
-    <button class="btn-edit" id="btn-edit" onclick="toggleEdicion()">✏️ Editar</button>
+  <div class="clock-box">
+    <div>🇨🇴 Hora Colombia</div>
+    <div><b id="clock">--:--:--</b></div>
   </div>
 </div>
 
-<div class="app">
+<div class="setup-screen" id="setup">
+  <h2>⚽ Activar datos en vivo</h2>
+  <p>Necesitas una API key gratuita de <strong>API-Football</strong> para ver marcadores en tiempo real. Es gratis y tarda 2 minutos.</p>
 
-  <div class="edit-banner" id="edit-banner">
-    ✏️ <b>Modo edición activo.</b> Escribe los marcadores directamente en los partidos. Se guardan automáticamente en este navegador.
+  <div class="steps">
+    <ol>
+      <li>Ve a <a href="https://dashboard.api-football.com/register" target="_blank">dashboard.api-football.com/register</a></li>
+      <li>Regístrate con tu correo y confirma el email</li>
+      <li>En tu dashboard verás tu <code>API Key</code></li>
+      <li>Pega ese key aquí abajo y listo ✅</li>
+    </ol>
   </div>
 
-  <div class="update-note">
-    <span>📝 Última actualización: <b id="fecha-actualizacion">19 de junio de 2026</b></span>
-    <button class="btn-reset" onclick="reiniciarDatos()">↺ Restablecer datos originales</button>
-  </div>
+  <input class="key-input" id="key-input" type="text" placeholder="Pega tu API key aquí..." autocomplete="off" />
+  <button class="btn-primary" onclick="conectar()">Conectar y ver partidos</button>
+  <div class="err-msg" id="err-msg">❌ Token inválido o error de conexión. Verifica el token e intenta de nuevo.</div>
+</div>
+
+<div class="app" id="app">
 
   <div class="tabs">
-    <button class="tab active" onclick="cambiarTab('colombia')">🇨🇴 Colombia</button>
+    <button class="tab active" onclick="cambiarTab('hoy')">Hoy</button>
+    <button class="tab" onclick="cambiarTab('colombia')">🇨🇴 Colombia</button>
     <button class="tab" onclick="cambiarTab('grupos')">Grupos</button>
     <button class="tab" onclick="cambiarTab('fixture')">Fixture</button>
   </div>
 
-  <div id="vista-colombia"></div>
-  <div id="vista-grupos" style="display:none"></div>
-  <div id="vista-fixture" style="display:none"></div>
+  <div class="status-bar">
+    <span><span class="dot-live"></span><span id="status-txt">Conectando...</span></span>
+    <div style="display:flex;gap:6px;align-items:center">
+      <span id="last-update" style="font-size:10px;color:var(--gray)"></span>
+      <button class="btn-refresh" onclick="refrescar()">↻ Actualizar</button>
+    </div>
+  </div>
 
+  <div id="vista-hoy"><div class="loading"><div class="spinner"></div>Cargando partidos...</div></div>
+  <div id="vista-colombia" style="display:none"><div class="loading"><div class="spinner"></div>Cargando...</div></div>
+  <div id="vista-grupos" style="display:none"><div class="loading"><div class="spinner"></div>Cargando posiciones...</div></div>
+  <div id="vista-fixture" style="display:none"><div class="loading"><div class="spinner"></div>Cargando fixture...</div></div>
+
+  <div class="key-footer">
+    <span>API Key: <code id="key-display">••••••••</code></span>
+    <button class="btn-logout" onclick="cerrarSesion()">Cambiar key</button>
+  </div>
+  <div class="quota-note">Plan gratuito: 100 peticiones/día · Actualiza cada 10 min</div>
 </div>
 
 <script>
-// ════════════════════════════════════════════════════════════
-//  DATOS BASE (se usan solo la primera vez; luego localStorage manda)
-// ════════════════════════════════════════════════════════════
-
-const DATOS_BASE = {
-  colombia: [
-    { id:'col1', fecha:'Mié 17 jun', hora:'9:00 p.m.', rival:'🇺🇿 Uzbekistán', lugar:'Kansas City', r1:2, r2:0 },
-    { id:'col2', fecha:'Mar 23 jun', hora:'9:00 p.m.', rival:'🇨🇩 RD Congo',   lugar:'Por confirmar', r1:null, r2:null },
-    { id:'col3', fecha:'Sáb 27 jun', hora:'6:30 p.m.', rival:'🇵🇹 Portugal',   lugar:'Miami',          r1:null, r2:null },
-  ],
-  grupos: [
-    { id:'A', equipos:[
-      {f:'🇲🇽',n:'México',pj:1,pg:1,pe:0,pp:0,gf:2,gc:0,pts:3},
-      {f:'🇰🇷',n:'Corea del Sur',pj:1,pg:1,pe:0,pp:0,gf:2,gc:1,pts:3},
-      {f:'🇨🇿',n:'Chequia',pj:1,pg:0,pe:0,pp:1,gf:1,gc:2,pts:0},
-      {f:'🇿🇦',n:'Sudáfrica',pj:1,pg:0,pe:0,pp:1,gf:0,gc:2,pts:0},
-    ]},
-    { id:'B', equipos:[
-      {f:'🇨🇦',n:'Canadá',pj:1,pg:0,pe:1,pp:0,gf:1,gc:1,pts:1},
-      {f:'🇨🇭',n:'Suiza',pj:1,pg:0,pe:1,pp:0,gf:1,gc:1,pts:1},
-      {f:'🇧🇦',n:'Bosnia y Herz.',pj:1,pg:0,pe:1,pp:0,gf:1,gc:1,pts:1},
-      {f:'🇶🇦',n:'Catar',pj:1,pg:0,pe:1,pp:0,gf:1,gc:1,pts:1},
-    ]},
-    { id:'C', equipos:[
-      {f:'🏴',n:'Escocia',pj:2,pg:1,pe:1,pp:0,gf:2,gc:1,pts:4},
-      {f:'🇲🇦',n:'Marruecos',pj:2,pg:0,pe:2,pp:0,gf:2,gc:2,pts:2},
-      {f:'🇧🇷',n:'Brasil',pj:1,pg:0,pe:1,pp:0,gf:1,gc:1,pts:1},
-      {f:'🇭🇹',n:'Haití',pj:1,pg:0,pe:0,pp:1,gf:0,gc:1,pts:0},
-    ]},
-    { id:'D', equipos:[
-      {f:'🇺🇸',n:'EE.UU.',pj:2,pg:2,pe:0,pp:0,gf:6,gc:1,pts:6},
-      {f:'🇦🇺',n:'Australia',pj:2,pg:1,pe:0,pp:1,gf:2,gc:2,pts:3},
-      {f:'🇹🇷',n:'Turquía',pj:1,pg:0,pe:0,pp:1,gf:0,gc:2,pts:0},
-      {f:'🇵🇾',n:'Paraguay',pj:1,pg:0,pe:0,pp:1,gf:1,gc:4,pts:0},
-    ]},
-    { id:'E', equipos:[
-      {f:'🇩🇪',n:'Alemania',pj:1,pg:1,pe:0,pp:0,gf:5,gc:1,pts:3},
-      {f:'🇨🇮',n:'Costa de Marfil',pj:1,pg:1,pe:0,pp:0,gf:1,gc:0,pts:3},
-      {f:'🇪🇨',n:'Ecuador',pj:1,pg:0,pe:0,pp:1,gf:0,gc:1,pts:0},
-      {f:'🇨🇼',n:'Curazao',pj:1,pg:0,pe:0,pp:1,gf:1,gc:5,pts:0},
-    ]},
-    { id:'F', equipos:[
-      {f:'🇸🇪',n:'Suecia',pj:1,pg:1,pe:0,pp:0,gf:5,gc:1,pts:3},
-      {f:'🇳🇱',n:'Países Bajos',pj:1,pg:1,pe:0,pp:0,gf:2,gc:0,pts:3},
-      {f:'🇯🇵',n:'Japón',pj:1,pg:0,pe:0,pp:1,gf:0,gc:2,pts:0},
-      {f:'🇹🇳',n:'Túnez',pj:1,pg:0,pe:0,pp:1,gf:1,gc:5,pts:0},
-    ]},
-    { id:'G', equipos:[
-      {f:'🇧🇪',n:'Bélgica',pj:1,pg:1,pe:0,pp:0,gf:2,gc:0,pts:3},
-      {f:'🇳🇿',n:'Nueva Zelanda',pj:1,pg:1,pe:0,pp:0,gf:1,gc:0,pts:3},
-      {f:'🇪🇬',n:'Egipto',pj:1,pg:0,pe:0,pp:1,gf:0,gc:2,pts:0},
-      {f:'🇮🇷',n:'Irán',pj:1,pg:0,pe:0,pp:1,gf:0,gc:1,pts:0},
-    ]},
-    { id:'H', equipos:[
-      {f:'🇪🇸',n:'España',pj:1,pg:1,pe:0,pp:0,gf:3,gc:0,pts:3},
-      {f:'🇺🇾',n:'Uruguay',pj:1,pg:1,pe:0,pp:0,gf:2,gc:0,pts:3},
-      {f:'🇨🇻',n:'Cabo Verde',pj:1,pg:0,pe:0,pp:1,gf:0,gc:3,pts:0},
-      {f:'🇸🇦',n:'Arabia Saudí',pj:1,pg:0,pe:0,pp:1,gf:0,gc:2,pts:0},
-    ]},
-    { id:'I', equipos:[
-      {f:'🇫🇷',n:'Francia',pj:1,pg:1,pe:0,pp:0,gf:2,gc:0,pts:3},
-      {f:'🇳🇴',n:'Noruega',pj:1,pg:1,pe:0,pp:0,gf:2,gc:1,pts:3},
-      {f:'🇮🇶',n:'Irak',pj:1,pg:0,pe:0,pp:1,gf:1,gc:2,pts:0},
-      {f:'🇸🇳',n:'Senegal',pj:1,pg:0,pe:0,pp:1,gf:0,gc:2,pts:0},
-    ]},
-    { id:'J', equipos:[
-      {f:'🇦🇷',n:'Argentina',pj:1,pg:1,pe:0,pp:0,gf:2,gc:0,pts:3},
-      {f:'🇦🇹',n:'Austria',pj:1,pg:1,pe:0,pp:0,gf:1,gc:0,pts:3},
-      {f:'🇩🇿',n:'Argelia',pj:1,pg:0,pe:0,pp:1,gf:0,gc:1,pts:0},
-      {f:'🇯🇴',n:'Jordania',pj:1,pg:0,pe:0,pp:1,gf:0,gc:2,pts:0},
-    ]},
-    { id:'K', equipos:[
-      {f:'🇨🇴',n:'Colombia',pj:1,pg:1,pe:0,pp:0,gf:2,gc:0,pts:3},
-      {f:'🇵🇹',n:'Portugal',pj:1,pg:0,pe:0,pp:1,gf:0,gc:1,pts:0},
-      {f:'🇨🇩',n:'RD Congo',pj:0,pg:0,pe:0,pp:0,gf:0,gc:0,pts:0},
-      {f:'🇺🇿',n:'Uzbekistán',pj:1,pg:0,pe:0,pp:1,gf:0,gc:2,pts:0},
-    ]},
-    { id:'L', equipos:[
-      {f:'🏴',n:'Inglaterra',pj:1,pg:1,pe:0,pp:0,gf:3,gc:0,pts:3},
-      {f:'🇬🇭',n:'Ghana',pj:1,pg:1,pe:0,pp:0,gf:1,gc:0,pts:3},
-      {f:'🇭🇷',n:'Croacia',pj:1,pg:0,pe:0,pp:1,gf:0,gc:1,pts:0},
-      {f:'🇵🇦',n:'Panamá',pj:1,pg:0,pe:0,pp:1,gf:0,gc:1,pts:0},
-    ]},
-  ],
-  fixture: [
-    { jornada:'Jornada 1 — 11 al 17 junio', partidos:[
-      {id:'f1',d:'Jue 11 jun',h:'2:00 p.m.',e1:'🇲🇽 México',e2:'Sudáfrica 🇿🇦',g:'A',r1:2,r2:0},
-      {id:'f2',d:'Jue 11 jun',h:'9:00 p.m.',e1:'🇰🇷 Corea del Sur',e2:'Chequia 🇨🇿',g:'A',r1:2,r2:1},
-      {id:'f3',d:'Vie 12 jun',h:'2:00 p.m.',e1:'🇨🇦 Canadá',e2:'Bosnia y Herz. 🇧🇦',g:'B',r1:1,r2:1},
-      {id:'f4',d:'Vie 12 jun',h:'8:00 p.m.',e1:'🇺🇸 EE.UU.',e2:'Paraguay 🇵🇾',g:'D',r1:4,r2:1},
-      {id:'f5',d:'Sáb 13 jun',h:'2:00 p.m.',e1:'🇶🇦 Catar',e2:'Suiza 🇨🇭',g:'B',r1:1,r2:1},
-      {id:'f6',d:'Sáb 13 jun',h:'5:00 p.m.',e1:'🇧🇷 Brasil',e2:'Marruecos 🇲🇦',g:'C',r1:1,r2:1},
-      {id:'f7',d:'Sáb 13 jun',h:'8:00 p.m.',e1:'🇭🇹 Haití',e2:'Escocia 🏴',g:'C',r1:0,r2:1},
-      {id:'f8',d:'Sáb 13 jun',h:'11:00 p.m.',e1:'🇦🇺 Australia',e2:'Turquía 🇹🇷',g:'D',r1:2,r2:0},
-      {id:'f9',d:'Dom 14 jun',h:'12:00 m.',e1:'🇩🇪 Alemania',e2:'Curazao 🇨🇼',g:'E',r1:5,r2:1},
-      {id:'f10',d:'Dom 14 jun',h:'3:00 p.m.',e1:'🇳🇱 Países Bajos',e2:'Japón 🇯🇵',g:'F',r1:2,r2:0},
-      {id:'f11',d:'Dom 14 jun',h:'6:00 p.m.',e1:'🇨🇮 Costa de Marfil',e2:'Ecuador 🇪🇨',g:'E',r1:1,r2:0},
-      {id:'f12',d:'Dom 14 jun',h:'9:00 p.m.',e1:'🇸🇪 Suecia',e2:'Túnez 🇹🇳',g:'F',r1:5,r2:1},
-      {id:'f13',d:'Lun 15 jun',h:'11:00 a.m.',e1:'🇪🇸 España',e2:'Cabo Verde 🇨🇻',g:'H',r1:3,r2:0},
-      {id:'f14',d:'Lun 15 jun',h:'2:00 p.m.',e1:'🇧🇪 Bélgica',e2:'Egipto 🇪🇬',g:'G',r1:2,r2:0},
-      {id:'f15',d:'Lun 15 jun',h:'5:00 p.m.',e1:'🇸🇦 Arabia Saudí',e2:'Uruguay 🇺🇾',g:'H',r1:0,r2:2},
-      {id:'f16',d:'Lun 15 jun',h:'8:00 p.m.',e1:'🇮🇷 Irán',e2:'Nueva Zelanda 🇳🇿',g:'G',r1:0,r2:1},
-      {id:'f17',d:'Mar 16 jun',h:'2:00 p.m.',e1:'🇫🇷 Francia',e2:'Senegal 🇸🇳',g:'I',r1:2,r2:0},
-      {id:'f18',d:'Mar 16 jun',h:'5:00 p.m.',e1:'🇮🇶 Irak',e2:'Noruega 🇳🇴',g:'I',r1:1,r2:2},
-      {id:'f19',d:'Mar 16 jun',h:'8:00 p.m.',e1:'🇦🇷 Argentina',e2:'Argelia 🇩🇿',g:'J',r1:2,r2:0},
-      {id:'f20',d:'Mar 16 jun',h:'11:00 p.m.',e1:'🇦🇹 Austria',e2:'Jordania 🇯🇴',g:'J',r1:1,r2:0},
-      {id:'f21',d:'Mié 17 jun',h:'12:00 m.',e1:'🇵🇹 Portugal',e2:'RD Congo 🇨🇩',g:'K',r1:null,r2:null},
-      {id:'f22',d:'Mié 17 jun',h:'3:00 p.m.',e1:'🏴 Inglaterra',e2:'Croacia 🇭🇷',g:'L',r1:3,r2:0},
-      {id:'f23',d:'Mié 17 jun',h:'6:00 p.m.',e1:'🇬🇭 Ghana',e2:'Panamá 🇵🇦',g:'L',r1:1,r2:0},
-      {id:'f24',d:'Mié 17 jun',h:'9:00 p.m.',e1:'🇺🇿 Uzbekistán',e2:'Colombia 🇨🇴',g:'K',r1:0,r2:2,col:true},
-    ]},
-    { jornada:'Jornada 2 — 18 al 23 junio', partidos:[
-      {id:'f25',d:'Jue 18 jun',h:'11:00 a.m.',e1:'🇨🇿 Chequia',e2:'Sudáfrica 🇿🇦',g:'A',r1:null,r2:null},
-      {id:'f26',d:'Jue 18 jun',h:'2:00 p.m.',e1:'🇨🇭 Suiza',e2:'Bosnia y Herz. 🇧🇦',g:'B',r1:null,r2:null},
-      {id:'f27',d:'Jue 18 jun',h:'5:00 p.m.',e1:'🇨🇦 Canadá',e2:'Catar 🇶🇦',g:'B',r1:null,r2:null},
-      {id:'f28',d:'Jue 18 jun',h:'8:00 p.m.',e1:'🇲🇽 México',e2:'Corea del Sur 🇰🇷',g:'A',r1:null,r2:null},
-      {id:'f29',d:'Vie 19 jun',h:'2:00 p.m.',e1:'🇺🇸 EE.UU.',e2:'Australia 🇦🇺',g:'D',r1:2,r2:0},
-      {id:'f30',d:'Vie 19 jun',h:'5:00 p.m.',e1:'🏴 Escocia',e2:'Marruecos 🇲🇦',g:'C',r1:1,r2:1},
-      {id:'f31',d:'Vie 19 jun',h:'8:00 p.m.',e1:'🇧🇷 Brasil',e2:'Haití 🇭🇹',g:'C',r1:null,r2:null},
-      {id:'f32',d:'Vie 19 jun',h:'11:00 p.m.',e1:'🇹🇷 Turquía',e2:'Paraguay 🇵🇾',g:'D',r1:null,r2:null},
-      {id:'f33',d:'Sáb 20 jun',h:'2:00 p.m.',e1:'🇳🇱 Países Bajos',e2:'Suecia 🇸🇪',g:'F',r1:null,r2:null},
-      {id:'f34',d:'Sáb 20 jun',h:'3:00 p.m.',e1:'🇩🇪 Alemania',e2:'Costa de Marfil 🇨🇮',g:'E',r1:null,r2:null},
-      {id:'f35',d:'Sáb 20 jun',h:'7:00 p.m.',e1:'🇪🇨 Ecuador',e2:'Curazao 🇨🇼',g:'E',r1:null,r2:null},
-      {id:'f36',d:'Sáb 20 jun',h:'11:00 p.m.',e1:'🇹🇳 Túnez',e2:'Japón 🇯🇵',g:'F',r1:null,r2:null},
-      {id:'f37',d:'Dom 21 jun',h:'11:00 a.m.',e1:'🇪🇸 España',e2:'Arabia Saudí 🇸🇦',g:'H',r1:null,r2:null},
-      {id:'f38',d:'Dom 21 jun',h:'2:00 p.m.',e1:'🇧🇪 Bélgica',e2:'Irán 🇮🇷',g:'G',r1:null,r2:null},
-      {id:'f39',d:'Dom 21 jun',h:'5:00 p.m.',e1:'🇺🇾 Uruguay',e2:'Cabo Verde 🇨🇻',g:'H',r1:null,r2:null},
-      {id:'f40',d:'Dom 21 jun',h:'8:00 p.m.',e1:'🇳🇿 Nueva Zelanda',e2:'Egipto 🇪🇬',g:'G',r1:null,r2:null},
-      {id:'f41',d:'Lun 22 jun',h:'12:00 m.',e1:'🇦🇷 Argentina',e2:'Austria 🇦🇹',g:'J',r1:null,r2:null},
-      {id:'f42',d:'Lun 22 jun',h:'4:00 p.m.',e1:'🇫🇷 Francia',e2:'Irak 🇮🇶',g:'I',r1:null,r2:null},
-      {id:'f43',d:'Lun 22 jun',h:'7:00 p.m.',e1:'🇳🇴 Noruega',e2:'Senegal 🇸🇳',g:'I',r1:null,r2:null},
-      {id:'f44',d:'Lun 22 jun',h:'10:00 p.m.',e1:'🇯🇴 Jordania',e2:'Argelia 🇩🇿',g:'J',r1:null,r2:null},
-      {id:'f45',d:'Mar 23 jun',h:'12:00 m.',e1:'🇵🇹 Portugal',e2:'Uzbekistán 🇺🇿',g:'K',r1:null,r2:null},
-      {id:'f46',d:'Mar 23 jun',h:'3:00 p.m.',e1:'🏴 Inglaterra',e2:'Ghana 🇬🇭',g:'L',r1:null,r2:null},
-      {id:'f47',d:'Mar 23 jun',h:'6:00 p.m.',e1:'🇵🇦 Panamá',e2:'Croacia 🇭🇷',g:'L',r1:null,r2:null},
-      {id:'f48',d:'Mar 23 jun',h:'9:00 p.m.',e1:'🇨🇴 Colombia',e2:'RD Congo 🇨🇩',g:'K',r1:null,r2:null,col:true},
-    ]},
-    { jornada:'Jornada 3 — 24 al 27 junio', partidos:[
-      {id:'f49',d:'Mié 24 jun',h:'2:00 p.m.',e1:'🇨🇭 Suiza',e2:'Canadá 🇨🇦',g:'B',r1:null,r2:null},
-      {id:'f50',d:'Mié 24 jun',h:'2:00 p.m.',e1:'🇧🇦 Bosnia y Herz.',e2:'Catar 🇶🇦',g:'B',r1:null,r2:null},
-      {id:'f51',d:'Mié 24 jun',h:'5:00 p.m.',e1:'🏴 Escocia',e2:'Brasil 🇧🇷',g:'C',r1:null,r2:null},
-      {id:'f52',d:'Mié 24 jun',h:'5:00 p.m.',e1:'🇲🇦 Marruecos',e2:'Haití 🇭🇹',g:'C',r1:null,r2:null},
-      {id:'f53',d:'Mié 24 jun',h:'8:00 p.m.',e1:'🇨🇿 Chequia',e2:'México 🇲🇽',g:'A',r1:null,r2:null},
-      {id:'f54',d:'Mié 24 jun',h:'8:00 p.m.',e1:'🇿🇦 Sudáfrica',e2:'Corea del Sur 🇰🇷',g:'A',r1:null,r2:null},
-      {id:'f55',d:'Jue 25 jun',h:'3:00 p.m.',e1:'🇨🇼 Curazao',e2:'Costa de Marfil 🇨🇮',g:'E',r1:null,r2:null},
-      {id:'f56',d:'Jue 25 jun',h:'3:00 p.m.',e1:'🇪🇨 Ecuador',e2:'Alemania 🇩🇪',g:'E',r1:null,r2:null},
-      {id:'f57',d:'Jue 25 jun',h:'6:00 p.m.',e1:'🇯🇵 Japón',e2:'Suecia 🇸🇪',g:'F',r1:null,r2:null},
-      {id:'f58',d:'Jue 25 jun',h:'6:00 p.m.',e1:'🇹🇳 Túnez',e2:'Países Bajos 🇳🇱',g:'F',r1:null,r2:null},
-      {id:'f59',d:'Jue 25 jun',h:'9:00 p.m.',e1:'🇹🇷 Turquía',e2:'EE.UU. 🇺🇸',g:'D',r1:null,r2:null},
-      {id:'f60',d:'Jue 25 jun',h:'9:00 p.m.',e1:'🇵🇾 Paraguay',e2:'Australia 🇦🇺',g:'D',r1:null,r2:null},
-      {id:'f61',d:'Vie 26 jun',h:'2:00 p.m.',e1:'🇳🇴 Noruega',e2:'Francia 🇫🇷',g:'I',r1:null,r2:null},
-      {id:'f62',d:'Vie 26 jun',h:'2:00 p.m.',e1:'🇸🇳 Senegal',e2:'Irak 🇮🇶',g:'I',r1:null,r2:null},
-      {id:'f63',d:'Vie 26 jun',h:'7:00 p.m.',e1:'🇨🇻 Cabo Verde',e2:'Arabia Saudí 🇸🇦',g:'H',r1:null,r2:null},
-      {id:'f64',d:'Vie 26 jun',h:'7:00 p.m.',e1:'🇺🇾 Uruguay',e2:'España 🇪🇸',g:'H',r1:null,r2:null},
-      {id:'f65',d:'Vie 26 jun',h:'10:00 p.m.',e1:'🇪🇬 Egipto',e2:'Irán 🇮🇷',g:'G',r1:null,r2:null},
-      {id:'f66',d:'Vie 26 jun',h:'10:00 p.m.',e1:'🇳🇿 Nueva Zelanda',e2:'Bélgica 🇧🇪',g:'G',r1:null,r2:null},
-      {id:'f67',d:'Sáb 27 jun',h:'4:00 p.m.',e1:'🇵🇦 Panamá',e2:'Inglaterra 🏴',g:'L',r1:null,r2:null},
-      {id:'f68',d:'Sáb 27 jun',h:'4:00 p.m.',e1:'🇭🇷 Croacia',e2:'Ghana 🇬🇭',g:'L',r1:null,r2:null},
-      {id:'f69',d:'Sáb 27 jun',h:'6:30 p.m.',e1:'🇨🇴 Colombia',e2:'Portugal 🇵🇹',g:'K',r1:null,r2:null,col:true},
-      {id:'f70',d:'Sáb 27 jun',h:'6:30 p.m.',e1:'🇨🇩 RD Congo',e2:'Uzbekistán 🇺🇿',g:'K',r1:null,r2:null},
-      {id:'f71',d:'Sáb 27 jun',h:'9:00 p.m.',e1:'🇩🇿 Argelia',e2:'Austria 🇦🇹',g:'J',r1:null,r2:null},
-      {id:'f72',d:'Sáb 27 jun',h:'9:00 p.m.',e1:'🇯🇴 Jordania',e2:'Argentina 🇦🇷',g:'J',r1:null,r2:null},
-    ]},
-  ]
-};
-
-// ════════════════════════════════════════════════════════════
-//  PERSISTENCIA — localStorage
-// ════════════════════════════════════════════════════════════
-
-const STORAGE_KEY = 'mundial2026_datos';
-let modoEdicion = false;
-let DATOS = null;
-
-function cargarDatos() {
-  try {
-    const guardado = localStorage.getItem(STORAGE_KEY);
-    DATOS = guardado ? JSON.parse(guardado) : JSON.parse(JSON.stringify(DATOS_BASE));
-  } catch(e) {
-    DATOS = JSON.parse(JSON.stringify(DATOS_BASE));
+  // ─── Config ───────────────────────────────────────────────
+  const API_BASE = 'https://v3.football.api-sports.io';
+  const PROXY = 'https://api.allorigins.win/raw?url=';
+  const LEAGUE_ID = 1;     // FIFA World Cup
+  const SEASON = 2026;
+  let apiKey = '';
+  let tabActual = 'hoy';
+  let intervalo = null;
+  let todosPartidos = [];
+  let posiciones = [];
+  
+  // ─── Reloj Colombia ────────────────────────────────────────
+  function tickClock() {
+    const now = new Date();
+    const col = new Date(now.getTime() - (now.getTimezoneOffset() + 300) * 60000);
+    document.getElementById('clock').textContent = col.toTimeString().slice(0,8);
   }
-}
-
-function guardarDatos() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(DATOS));
-  const ahora = new Date().toLocaleString('es-CO', {
-    timeZone:'America/Bogota', day:'numeric', month:'long', year:'numeric', hour:'2-digit', minute:'2-digit'
-  });
-  document.getElementById('fecha-actualizacion').textContent = ahora;
-  localStorage.setItem(STORAGE_KEY + '_fecha', ahora);
-}
-
-function reiniciarDatos() {
-  if (!confirm('¿Restablecer todos los datos a los valores originales? Se perderán tus ediciones.')) return;
-  localStorage.removeItem(STORAGE_KEY);
-  localStorage.removeItem(STORAGE_KEY + '_fecha');
-  cargarDatos();
-  renderTodo();
-  document.getElementById('fecha-actualizacion').textContent = '19 de junio de 2026';
-}
-
-function toggleEdicion() {
-  modoEdicion = !modoEdicion;
-  document.getElementById('btn-edit').classList.toggle('active', modoEdicion);
-  document.getElementById('btn-edit').textContent = modoEdicion ? '✓ Listo' : '✏️ Editar';
-  document.getElementById('edit-banner').classList.toggle('show', modoEdicion);
-  renderTodo();
-}
-
-// ════════════════════════════════════════════════════════════
-//  RELOJ
-// ════════════════════════════════════════════════════════════
-
-function tickClock() {
-  const now = new Date();
-  const col = new Date(now.getTime() - (now.getTimezoneOffset() + 300) * 60000);
-  document.getElementById('clock').textContent = col.toTimeString().slice(0,8);
-}
-setInterval(tickClock, 1000);
-tickClock();
-
-// ════════════════════════════════════════════════════════════
-//  RENDER: COLOMBIA
-// ════════════════════════════════════════════════════════════
-
-function scoreInputHtml(matchId, r1, r2, campo1, campo2) {
-  if (!modoEdicion) {
-    if (r1 == null || r2 == null) return null;
-    return `<div class="score-nums">${r1} - ${r2}</div><div class="fin-badge">FINALIZADO</div>`;
+  setInterval(tickClock, 1000);
+  tickClock();
+  
+  // ─── Conversión de hora a Colombia ────────────────────────
+  function aHoraColombia(isoStr) {
+    if (!isoStr) return '--';
+    const d = new Date(isoStr);
+    return d.toLocaleString('es-CO', {
+      timeZone: 'America/Bogota',
+      hour: '2-digit', minute: '2-digit', hour12: true
+    });
   }
-  return `
-    <div class="score-edit">
-      <input type="number" min="0" max="20" class="score-input" value="${r1 ?? ''}"
-        onchange="actualizarMarcador('${matchId}', '${campo1}', this.value)" placeholder="-">
-      <span class="score-dash">-</span>
-      <input type="number" min="0" max="20" class="score-input" value="${r2 ?? ''}"
-        onchange="actualizarMarcador('${matchId}', '${campo2}', this.value)" placeholder="-">
-    </div>`;
-}
-
-function renderColombia() {
-  const el = document.getElementById('vista-colombia');
-  el.innerHTML = `
-    <div class="col-header">
-      <div class="col-flag">🇨🇴</div>
-      <div class="col-info">
-        <h3>Colombia · Grupo K</h3>
-        <p>Tres partidos — fase de grupos Mundial 2026</p>
-      </div>
-    </div>
-    <div class="matches-grid">
-      ${DATOS.colombia.map(m => {
-        const score = scoreInputHtml(m.id, m.r1, m.r2, 'r1', 'r2');
-        return `
-        <div class="match-card col-card ${modoEdicion ? 'editing' : ''}">
-          <div class="team">
-            <span class="team-flag">🇨🇴</span>
-            <span class="team-name">Colombia</span>
-          </div>
-          <div class="score-box">
-            ${score || `<div class="score-nums upcoming">${m.hora}</div><div class="match-meta">Hora COL</div>`}
-            <div class="match-meta">${m.fecha} · ${m.lugar}</div>
-          </div>
-          <div class="team right">
-            <span class="team-flag">${m.rival.split(' ')[0]}</span>
-            <span class="team-name">${m.rival.split(' ').slice(1).join(' ')}</span>
-          </div>
-        </div>`;
-      }).join('')}
-    </div>`;
-}
-
-function actualizarMarcador(matchId, campo, valor) {
-  const num = valor === '' ? null : parseInt(valor);
-  // Buscar en colombia
-  let item = DATOS.colombia.find(m => m.id === matchId);
-  if (!item) {
-    // Buscar en fixture
-    for (const jornada of DATOS.fixture) {
-      item = jornada.partidos.find(p => p.id === matchId);
-      if (item) break;
+  function fechaColombia(isoStr) {
+    if (!isoStr) return '';
+    const d = new Date(isoStr);
+    return d.toLocaleDateString('es-CO', {
+      timeZone: 'America/Bogota',
+      weekday: 'short', day: 'numeric', month: 'short'
+    });
+  }
+  function esHoyColombia(isoStr) {
+    const ahoraCol = new Date(new Date().toLocaleString('en-US', {timeZone:'America/Bogota'}));
+    const matchCol = new Date(new Date(isoStr).toLocaleString('en-US', {timeZone:'America/Bogota'}));
+    return ahoraCol.toDateString() === matchCol.toDateString();
+  }
+  
+  // ─── Llamada a la API a través del proxy ──────────────────
+  // API-Football requiere el header 'x-apisports-key', así que lo mandamos
+  // como parámetro de query (?key=...) usando un pequeño truco: como el
+  // proxy allorigins reenvía la URL completa, agregamos el key como query
+  // param soportado por API-Football: x-apisports-key también funciona
+  // como parámetro de URL en este proveedor.
+  async function fetchJSON(path) {
+    const fullUrl = `${API_BASE}${path}`;
+    const proxiedUrl = PROXY + encodeURIComponent(fullUrl);
+    const r = await fetch(proxiedUrl, {
+      headers: { 'x-apisports-key': apiKey }
+    });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return r.json();
+  }
+  
+  // ─── Setup / Auth ──────────────────────────────────────────
+  function conectar() {
+    const k = document.getElementById('key-input').value.trim();
+    if (!k) return;
+    document.getElementById('err-msg').style.display = 'none';
+    apiKey = k;
+    localStorage.setItem('wc2026_key', k);
+    mostrarApp();
+  }
+  
+  function cerrarSesion() {
+    clearInterval(intervalo);
+    localStorage.removeItem('wc2026_key');
+    apiKey = '';
+    document.getElementById('app').style.display = 'none';
+    document.getElementById('setup').style.display = 'block';
+  }
+  
+  function mostrarApp() {
+    document.getElementById('setup').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    document.getElementById('key-display').textContent = apiKey.slice(0,4) + '••••' + apiKey.slice(-4);
+    cargarDatos();
+    // Cada 10 minutos, para respetar el límite de 100 peticiones/día del plan gratuito
+    intervalo = setInterval(cargarDatos, 10 * 60000);
+  }
+  
+  // ─── Carga de datos ─────────────────────────────────────────
+  async function cargarDatos() {
+    try {
+      document.getElementById('status-txt').textContent = 'Actualizando...';
+      const data = await fetchJSON(`/fixtures?league=${LEAGUE_ID}&season=${SEASON}`);
+      todosPartidos = data.response || [];
+      posiciones = calcularPosiciones(todosPartidos);
+  
+      const now = new Date().toLocaleString('es-CO', {
+        timeZone:'America/Bogota', hour:'2-digit', minute:'2-digit', second:'2-digit'
+      });
+      document.getElementById('last-update').textContent = `Actualizado: ${now}`;
+  
+      const live = todosPartidos.filter(m => ['1H','2H','HT','ET','LIVE'].includes(m.fixture?.status?.short));
+      document.getElementById('status-txt').textContent =
+        live.length > 0
+          ? `${live.length} partido${live.length > 1 ? 's' : ''} en vivo`
+          : `${todosPartidos.length} partidos cargados`;
+  
+      renderTab(tabActual);
+    } catch(e) {
+      document.getElementById('status-txt').textContent = 'Error al cargar — intenta de nuevo';
+      console.error(e);
     }
   }
-  if (item) {
-    item[campo] = num;
-    guardarDatos();
+  
+  function refrescar() { cargarDatos(); }
+  
+  // ─── Calcular tabla de posiciones a partir de los partidos ──
+  function calcularPosiciones(partidos) {
+    const grupos = {};
+  
+    partidos.forEach(m => {
+      const g = m.league?.round; // ej: "Group Stage - A"
+      if (!g || !g.includes('Group')) return;
+      if (!grupos[g]) grupos[g] = {};
+  
+      const home = m.teams?.home;
+      const away = m.teams?.away;
+      [home, away].forEach(team => {
+        if (team && !grupos[g][team.id]) {
+          grupos[g][team.id] = {
+            team: { tla: team.id, name: team.name, shortName: team.name, logo: team.logo },
+            playedGames: 0, won: 0, draw: 0, lost: 0,
+            goalsFor: 0, goalsAgainst: 0, points: 0
+          };
+        }
+      });
+  
+      if (m.fixture?.status?.short !== 'FT') return;
+  
+      const gh = m.goals?.home;
+      const ga = m.goals?.away;
+      if (gh == null || ga == null) return;
+  
+      const homeRow = grupos[g][home.id];
+      const awayRow = grupos[g][away.id];
+  
+      homeRow.playedGames++; awayRow.playedGames++;
+      homeRow.goalsFor += gh; homeRow.goalsAgainst += ga;
+      awayRow.goalsFor += ga; awayRow.goalsAgainst += gh;
+  
+      if (gh > ga) { homeRow.won++; homeRow.points += 3; awayRow.lost++; }
+      else if (gh < ga) { awayRow.won++; awayRow.points += 3; homeRow.lost++; }
+      else { homeRow.draw++; awayRow.draw++; homeRow.points++; awayRow.points++; }
+    });
+  
+    return Object.entries(grupos).map(([groupName, teamsObj]) => {
+      const table = Object.values(teamsObj).sort((a, b) =>
+        b.points - a.points || (b.goalsFor - b.goalsAgainst) - (a.goalsFor - a.goalsAgainst) || b.goalsFor - a.goalsFor
+      );
+      return { group: groupName, table };
+    }).sort((a, b) => a.group.localeCompare(b.group));
   }
-}
+  </script>
 
-// ════════════════════════════════════════════════════════════
-//  RENDER: GRUPOS
-// ════════════════════════════════════════════════════════════
-
-function statInputHtml(grupoId, equipoIdx, campo, valor) {
-  if (!modoEdicion) return valor;
-  return `<input type="number" min="0" max="99" class="stat-input" value="${valor}"
-    onchange="actualizarStat('${grupoId}', ${equipoIdx}, '${campo}', this.value)">`;
-}
-
-function renderGrupos() {
-  const el = document.getElementById('vista-grupos');
-  const legend = `
-    <div class="legend">
-      <span><span class="ldot" style="background:#185fa5"></span>Clasifica directo</span>
-      <span><span class="ldot" style="background:#2d7a14"></span>Mejor tercero</span>
-    </div>`;
-  const cards = DATOS.grupos.map(g => {
-    // En modo edición no reordenamos (para no mover los inputs mientras escribes)
-    const lista = modoEdicion ? g.equipos.map((t,i) => ({...t, _idx:i}))
-      : [...g.equipos].map((t,i) => ({...t, _idx:i})).sort((a,b) =>
-          b.pts - a.pts || (b.gf - b.gc) - (a.gf - a.gc) || b.gf - a.gf
-        );
-    const filas = lista.map((t, i) => {
-      const cls = !modoEdicion && i < 2 ? 'row-q' : !modoEdicion && i === 2 ? 'row-t' : '';
-      return `<tr class="${cls}">
-        <td><div class="team-cell"><span class="mini-flag">${t.f}</span><span class="mini-name">${t.n}</span></div></td>
-        <td>${statInputHtml(g.id, t._idx, 'pj', t.pj)}</td>
-        <td>${statInputHtml(g.id, t._idx, 'pg', t.pg)}</td>
-        <td>${statInputHtml(g.id, t._idx, 'pe', t.pe)}</td>
-        <td>${statInputHtml(g.id, t._idx, 'pp', t.pp)}</td>
-        <td>${statInputHtml(g.id, t._idx, 'gf', t.gf)}</td>
-        <td>${statInputHtml(g.id, t._idx, 'gc', t.gc)}</td>
-        <td class="pts-cell">${statInputHtml(g.id, t._idx, 'pts', t.pts)}</td>
-      </tr>`;
-    }).join('');
-    return `
-      <div class="group-card">
-        <div class="group-head">GRUPO ${g.id}</div>
-        <table class="group-table">
-          <thead><tr><th>Selección</th><th>PJ</th><th>PG</th><th>PE</th><th>PP</th><th>GF</th><th>GC</th><th>Pts</th></tr></thead>
-          <tbody>${filas}</tbody>
-        </table>
+<script>
+  // ─── Render ────────────────────────────────────────────────
+  function cambiarTab(tab) {
+    tabActual = tab;
+    document.querySelectorAll('.tab').forEach((t,i) => {
+      t.classList.toggle('active', ['hoy','colombia','grupos','fixture'][i] === tab);
+    });
+    ['hoy','colombia','grupos','fixture'].forEach(v => {
+      document.getElementById('vista-'+v).style.display = v === tab ? 'block' : 'none';
+    });
+    renderTab(tab);
+  }
+  
+  function renderTab(tab) {
+    if (tab === 'hoy')      renderHoy();
+    if (tab === 'colombia') renderColombia();
+    if (tab === 'grupos')   renderGrupos();
+    if (tab === 'fixture')  renderFixture();
+  }
+  
+  // ── Hoy ──────────────────────────────────────────────────
+  function renderHoy() {
+    const hoy = todosPartidos.filter(m => esHoyColombia(m.fixture?.date));
+    const el = document.getElementById('vista-hoy');
+    if (!hoy.length) {
+      el.innerHTML = `<div class="no-data">No hay partidos programados para hoy.</div>`;
+      return;
+    }
+    el.innerHTML = `<div class="matches-grid">${hoy.map(cardPartido).join('')}</div>`;
+  }
+  
+  // ── Colombia ──────────────────────────────────────────────
+  function renderColombia() {
+    const col = todosPartidos.filter(m =>
+      m.teams?.home?.name === 'Colombia' || m.teams?.away?.name === 'Colombia'
+    );
+    const el = document.getElementById('vista-colombia');
+    el.innerHTML = `
+      <div class="col-header">
+        <div class="col-flag">🇨🇴</div>
+        <div class="col-info">
+          <h3>Colombia · Grupo K</h3>
+          <p>Tres partidos — fase de grupos Mundial 2026</p>
+        </div>
+      </div>
+      <div class="matches-grid">${col.length ? col.map(cardPartido).join('') : '<div class="no-data">Cargando partidos de Colombia...</div>'}</div>
+    `;
+  }
+  
+  // ── Grupos ────────────────────────────────────────────────
+  function renderGrupos() {
+    const el = document.getElementById('vista-grupos');
+    if (!posiciones.length) {
+      el.innerHTML = `<div class="no-data">Aún no hay datos de grupos disponibles.</div>`;
+      return;
+    }
+    const legend = `
+      <div class="legend">
+        <span><span class="ldot" style="background:#185fa5"></span>Clasifica directo</span>
+        <span><span class="ldot" style="background:#2d7a14"></span>Mejor tercero</span>
       </div>`;
-  }).join('');
-  el.innerHTML = legend + `<div class="groups-grid">${cards}</div>`;
-}
-
-function actualizarStat(grupoId, equipoIdx, campo, valor) {
-  const grupo = DATOS.grupos.find(g => g.id === grupoId);
-  if (grupo && grupo.equipos[equipoIdx]) {
-    grupo.equipos[equipoIdx][campo] = parseInt(valor) || 0;
-    guardarDatos();
+    const cards = posiciones.map(st => {
+      const rows = st.table.map((t, i) => {
+        const cls = i < 2 ? 'row-q' : i === 2 ? 'row-t' : '';
+        const logo = t.team?.logo
+          ? `<img class="mini-logo" src="${t.team.logo}" alt="">`
+          : `<span class="mini-flag">🏳️</span>`;
+        return `<tr class="${cls}">
+          <td><div class="team-cell">${logo}<span class="mini-name">${t.team?.shortName || t.team?.name}</span></div></td>
+          <td>${t.playedGames}</td>
+          <td>${t.won}</td>
+          <td>${t.draw}</td>
+          <td>${t.lost}</td>
+          <td>${t.goalsFor}</td>
+          <td>${t.goalsAgainst}</td>
+          <td class="pts-cell">${t.points}</td>
+        </tr>`;
+      }).join('');
+      return `
+        <div class="group-card">
+          <div class="group-head">${st.group}</div>
+          <table class="group-table">
+            <thead><tr><th>Selección</th><th>PJ</th><th>PG</th><th>PE</th><th>PP</th><th>GF</th><th>GC</th><th>Pts</th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>`;
+    }).join('');
+    el.innerHTML = legend + `<div class="groups-grid">${cards}</div>`;
   }
-}
-
-// ════════════════════════════════════════════════════════════
-//  RENDER: FIXTURE
-// ════════════════════════════════════════════════════════════
-
-function renderFixture() {
-  const el = document.getElementById('vista-fixture');
-  el.innerHTML = DATOS.fixture.map(j => `
-    <div class="date-sep first">${j.jornada}</div>
-    <div class="matches-grid">
-      ${j.partidos.map(p => {
-        const cardClass = (p.col ? 'col-card ' : '') + (modoEdicion ? 'editing' : '');
-        const score = scoreInputHtml(p.id, p.r1, p.r2, 'r1', 'r2');
-        return `
-          <div class="match-card ${cardClass}">
-            <div class="team">
-              <span class="team-flag">${p.e1.split(' ')[0]}</span>
-              <span class="team-name">${p.e1.split(' ').slice(1).join(' ')}</span>
-            </div>
-            <div class="score-box">
-              ${score || `<div class="score-nums upcoming">${p.h}</div><div class="match-meta">Hora COL</div>`}
-              <div class="match-meta">${p.d} · Gr. ${p.g}</div>
-            </div>
-            <div class="team right">
-              <span class="team-flag">${p.e2.split(' ').slice(-1)[0]}</span>
-              <span class="team-name">${p.e2.split(' ').slice(0,-1).join(' ')}</span>
-            </div>
-          </div>`;
-      }).join('')}
-    </div>`).join('');
-}
-
-// ════════════════════════════════════════════════════════════
-//  TABS Y RENDER GENERAL
-// ════════════════════════════════════════════════════════════
-
-function cambiarTab(tab) {
-  document.querySelectorAll('.tab').forEach((t,i) => {
-    t.classList.toggle('active', ['colombia','grupos','fixture'][i] === tab);
+  
+  // ── Fixture ───────────────────────────────────────────────
+  function renderFixture() {
+    const el = document.getElementById('vista-fixture');
+    if (!todosPartidos.length) {
+      el.innerHTML = `<div class="loading"><div class="spinner"></div>Cargando...</div>`;
+      return;
+    }
+    const porFecha = {};
+    todosPartidos.forEach(m => {
+      const fecha = fechaColombia(m.fixture?.date);
+      if (!porFecha[fecha]) porFecha[fecha] = [];
+      porFecha[fecha].push(m);
+    });
+    let html = '<div class="matches-grid">';
+    Object.entries(porFecha).forEach(([fecha, ms], idx) => {
+      html += `<div class="date-sep ${idx===0?'first':''}">${fecha}</div>`;
+      html += ms.map(cardPartido).join('');
+    });
+    html += '</div>';
+    el.innerHTML = html;
+  }
+  
+  // ── Card de partido ───────────────────────────────────────
+  function cardPartido(m) {
+    const h = m.teams?.home;
+    const a = m.teams?.away;
+    const nameH = h?.name || '?';
+    const nameA = a?.name || '?';
+    const logoH = h?.logo ? `<img class="team-logo" src="${h.logo}" alt="">` : `<span class="team-flag">🏳️</span>`;
+    const logoA = a?.logo ? `<img class="team-logo" src="${a.logo}" alt="">` : `<span class="team-flag">🏳️</span>`;
+    const isCol = nameH === 'Colombia' || nameA === 'Colombia';
+    const status = m.fixture?.status?.short;
+    const isLive = ['1H','2H','HT','ET','LIVE'].includes(status);
+    const isDone = status === 'FT';
+  
+    let scoreHtml = '';
+    if (isLive || isDone) {
+      const gh = m.goals?.home ?? '-';
+      const ga = m.goals?.away ?? '-';
+      scoreHtml = `<div class="score-nums">${gh} – ${ga}</div>`;
+    } else {
+      scoreHtml = `<div class="score-nums upcoming">${aHoraColombia(m.fixture?.date)}</div>`;
+    }
+  
+    let badge = '';
+    if (isLive) badge = `<div class="live-badge">● EN VIVO</div>`;
+    else if (isDone) badge = `<div class="fin-badge">FINALIZADO</div>`;
+    else badge = `<div style="font-size:10px;color:var(--gray);margin-top:3px">Hora COL</div>`;
+  
+    const cardClass = isLive ? 'match-card live-card' : isCol ? 'match-card col-card' : 'match-card';
+    const grupo = m.league?.round?.replace('Group Stage - ', 'Gr. ') || '';
+  
+    return `
+      <div class="${cardClass}">
+        <div class="team">
+          ${logoH}
+          <span class="team-name">${nameH}</span>
+        </div>
+        <div class="score-box">
+          ${scoreHtml}
+          ${badge}
+          <div class="match-meta">${grupo}</div>
+        </div>
+        <div class="team right">
+          ${logoA}
+          <span class="team-name">${nameA}</span>
+        </div>
+      </div>`;
+  }
+  
+  // ─── Auto-login si ya tiene key guardada ──────────────────
+  window.addEventListener('load', () => {
+    const saved = localStorage.getItem('wc2026_key');
+    if (saved) {
+      apiKey = saved;
+      document.getElementById('key-input').value = saved;
+      mostrarApp();
+    }
   });
-  ['colombia','grupos','fixture'].forEach(v => {
-    document.getElementById('vista-'+v).style.display = v === tab ? 'block' : 'none';
-  });
-}
-
-function renderTodo() {
-  renderColombia();
-  renderGrupos();
-  renderFixture();
-}
-
-// ════════════════════════════════════════════════════════════
-//  INICIO
-// ════════════════════════════════════════════════════════════
-
-cargarDatos();
-const fechaGuardada = localStorage.getItem(STORAGE_KEY + '_fecha');
-if (fechaGuardada) document.getElementById('fecha-actualizacion').textContent = fechaGuardada;
-renderTodo();
-</script>
-</body>
-</html>
+  </script>
+  </body>
+  </html>
